@@ -16,6 +16,7 @@ package v1
 
 import (
 	"github.com/openshift/cluster-logging-operator/internal/status"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -50,6 +51,12 @@ type ClusterLogForwarderSpec struct {
 	//
 	// +optional
 	OutputDefaults *OutputDefaults `json:"outputDefaults,omitempty"`
+
+	// Limits are all the flow control measures used to
+	// rate limit logs collected by collector in a node
+	//
+	// +optional
+	Limits []LimitSpec `json:"limits,omitempty"`
 }
 
 // ClusterLogForwarderStatus defines the observed state of ClusterLogForwarder
@@ -89,6 +96,12 @@ type InputSpec struct {
 	//
 	// +optional
 	Audit *Audit `json:"audit,omitempty"`
+
+	// LimitRef refers to the limit name applied at the `input`
+	// of a `pipeline`
+	//
+	// +optional
+	LimitRef string `json:"limitRef,omitempty"`
 }
 
 // Application log selector.
@@ -189,6 +202,12 @@ type OutputSpec struct {
 	//
 	// +optional
 	Secret *OutputSecretSpec `json:"secret,omitempty"`
+
+	// LimitRef refers to the limit name applied at the `output`
+	// of a `pipeline`
+	//
+	// +optional
+	LimitRef string `json:"limitRef,omitempty"`
 }
 
 // OutputSecretSpec is a secret reference containing name only, no namespace.
@@ -282,6 +301,34 @@ type ClusterLogForwarder struct {
 	Spec   ClusterLogForwarderSpec   `json:"spec,omitempty"`
 	Status ClusterLogForwarderStatus `json:"status,omitempty"`
 }
+
+type LimitSpec struct {
+	// Name used to refer to a limit applied
+	// to an input or output
+	//
+	// +required
+	Name string `json:"name,omitempty"`
+
+	// Policy is used to define the action taken
+	// by the collector when log collection rate exceeds
+	// the specified limit
+	//
+	// +kubebuilder:validation:Enum:=drop
+	// +required
+	Policy PolicyType `json:"policy,omitempty"`
+
+	// MaxBytesPerSecond is the maximum byte rate allowed from a
+	// input or an output in a pipeline
+	//
+	// +required
+	MaxBytesPerSecond resource.Quantity `json:"maxBytesPerSecond,omitempty"`
+}
+
+type PolicyType string
+
+const (
+	DropPolicy PolicyType = "drop"
+)
 
 // +kubebuilder:object:root=true
 // ClusterLogForwarderList contains a list of ClusterLogForwarder
