@@ -86,11 +86,35 @@ spec:
                     infrastructure:
                       description: Infrastructure, if present, enables `infrastructure` logs.
                       type: object
+                    limitRef:
+                      description: LimitRef refers to the limit name applied at the `input` of a `pipeline`
+                      type: string
                     name:
                       description: Name used to refer to the input of a `pipeline`.
                       type: string
                   required:
                   - name
+                  type: object
+                type: array
+              limits:
+                description: Limits are all the flow control measures used to rate limit logs collected by collector in a node
+                items:
+                  properties:
+                    maxBytesPerSecond:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      description: MaxBytesPerSecond is the maximum byte rate allowed from a input or an output in a pipeline
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    name:
+                      description: Name used to refer to a limit applied to an input or output
+                      type: string
+                    policy:
+                      description: Policy is used to define the action taken by the collector when log collection rate exceeds the specified limit
+                      enum:
+                      - drop
+                      type: string
                   type: object
                 type: array
               outputDefaults:
@@ -152,6 +176,9 @@ spec:
                           description: Topic specifies the target topic to send logs to.
                           type: string
                       type: object
+                    limitRef:
+                      description: LimitRef refers to the limit name applied at the `output` of a `pipeline`
+                      type: string
                     loki:
                       description: 'Loki provides optional extra properties for `type: loki`'
                       properties:
