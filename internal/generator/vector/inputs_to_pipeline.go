@@ -10,6 +10,28 @@ import (
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/helpers"
 )
 
+func AddThrottle(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
+	el := []generator.Element{}
+	userDefinedLimits := spec.LimitMap()
+	fmt.Println(userDefinedLimits)
+
+	for _, inputSpec := range spec.Inputs {
+		if len(inputSpec.LimitRef) > 0 {
+			if limit, ok := userDefinedLimits[inputSpec.LimitRef]; ok {
+				t := Throttle{
+					ComponentID: fmt.Sprintf(`throttle_%s`, inputSpec.Name),
+					Inputs:      helpers.MakeInputs([]string{fmt.Sprintf(`application_routes.%s`, inputSpec.Name)}...),
+					Threshold:   limit.MaxBytesPerSecond.String(),
+				}
+				el = append(el, t)
+			}
+		}
+	}
+	fmt.Println(el)
+
+	return el
+}
+
 func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
 	el := []generator.Element{}
 	for _, p := range spec.Pipelines {
@@ -18,13 +40,32 @@ func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Optio
 			s, _ := json.Marshal(p.Labels)
 			vrl = fmt.Sprintf(".openshift.labels = %s", s)
 		}
+		modifiedInputRefs := make([]string, 0)
+		userDefinedInputs := spec.InputMap()
+		for _, inputRef := range p.InputRefs {
+			if !logging.ReservedInputNames.Has(inputRef) {
+				if input, ok := userDefinedInputs[inputRef]; ok {
+					if len(input.LimitRef) > 0 {
+						inputRef = fmt.Sprintf(`"throttle_%s"`, inputRef)
+					} else {
+						inputRef = fmt.Sprintf(`"application_routes.%s"`, inputRef)
+					}
+				}
+			}
+
+			modifiedInputRefs = append(modifiedInputRefs, inputRef)
+		}
+
 		r := Remap{
 			ComponentID: p.Name,
-			Inputs:      helpers.MakeInputs(p.InputRefs...),
-			VRL:         vrl,
+			// Inputs:      helpers.MakeInputs(p.InputRefs...),
+			Inputs: helpers.MakeInputs(modifiedInputRefs...),
+			VRL:    vrl,
 		}
 		el = append(el, r)
 
 	}
+	el = append(el, AddThrottle(spec, op)...)
+
 	return el
 }

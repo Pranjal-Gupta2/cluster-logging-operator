@@ -3,8 +3,9 @@ package k8shandler
 import (
 	"context"
 	"fmt"
-	forwardergenerator "github.com/openshift/cluster-logging-operator/internal/generator/forwarder"
 	"strings"
+
+	forwardergenerator "github.com/openshift/cluster-logging-operator/internal/generator/forwarder"
 
 	"github.com/ViaQ/logerr/log"
 	configv1 "github.com/openshift/api/config/v1"
@@ -137,6 +138,8 @@ func (clusterRequest *ClusterLoggingRequest) NormalizeForwarder() (*logging.Clus
 	if !status.Pipelines.IsAllReady() {
 		log.V(3).Info("Pipeline not Ready", "pipelines", status.Pipelines)
 	}
+
+	spec.Limits = clusterRequest.ForwarderSpec.Limits
 
 	routes := logging.NewRoutes(spec.Pipelines) // Compute used inputs/outputs
 
