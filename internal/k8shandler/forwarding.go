@@ -143,6 +143,8 @@ func (clusterRequest *ClusterLoggingRequest) NormalizeForwarder() (*logging.Clus
 		log.V(3).Info("Pipeline not Ready", "pipelines", status.Pipelines)
 	}
 
+	spec.Limits = clusterRequest.ForwarderSpec.Limits
+
 	routes := logging.NewRoutes(spec.Pipelines) // Compute used inputs/outputs
 
 	// Add Ready=true status for all surviving inputs.

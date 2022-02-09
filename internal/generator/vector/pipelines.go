@@ -19,6 +19,28 @@ var (
 	UserDefinedInput = fmt.Sprintf("%s.%%s", RouteApplicationLogs)
 )
 
+func AddThrottle(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
+	el := []generator.Element{}
+	userDefinedLimits := spec.LimitMap()
+	fmt.Println(userDefinedLimits)
+
+	for _, inputSpec := range spec.Inputs {
+		if len(inputSpec.LimitRef) > 0 {
+			if limit, ok := userDefinedLimits[inputSpec.LimitRef]; ok {
+				t := Throttle{
+					ComponentID: fmt.Sprintf(`throttle_%s`, inputSpec.Name),
+					Inputs:      helpers.MakeInputs([]string{fmt.Sprintf(`application_routes.%s`, inputSpec.Name)}...),
+					Threshold:   limit.MaxBytesPerSecond.String(),
+				}
+				el = append(el, t)
+			}
+		}
+	}
+	fmt.Println(el)
+
+	return el
+}
+
 func Pipelines(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
 	el := []generator.Element{}
 	userDefined := spec.InputMap()
@@ -37,13 +59,17 @@ if err == null {
 `
 			vrls = append(vrls, parse)
 		}
-		inputs := []string{}
-		for _, i := range p.InputRefs {
-			if _, ok := userDefined[i]; ok {
-				inputs = append(inputs, fmt.Sprintf(UserDefinedInput, i))
-			} else {
-				inputs = append(inputs, i)
+		modifiedInputRefs := make([]string, 0)
+		for _, inputRef := range p.InputRefs {
+			if input, ok := userDefined[inputRef]; ok {
+				if len(input.LimitRef) > 0 {
+					inputRef = fmt.Sprintf(`"throttle_%s"`, inputRef)
+				} else {
+					inputRef = fmt.Sprintf(`"application_routes.%s"`, inputRef)
+				}
 			}
+
+			modifiedInputRefs = append(modifiedInputRefs, inputRef)
 		}
 		vrl := SrcPassThrough
 		if len(vrls) != 0 {
@@ -51,11 +77,14 @@ if err == null {
 		}
 		r := Remap{
 			ComponentID: p.Name,
-			Inputs:      helpers.MakeInputs(inputs...),
-			VRL:         vrl,
+			// Inputs:      helpers.MakeInputs(p.InputRefs...),
+			Inputs: helpers.MakeInputs(modifiedInputRefs...),
+			VRL:    vrl,
 		}
 		el = append(el, r)
 
 	}
+	el = append(el, AddThrottle(spec, op)...)
+
 	return el
 }
