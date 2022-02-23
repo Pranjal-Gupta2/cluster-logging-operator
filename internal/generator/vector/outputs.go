@@ -32,8 +32,24 @@ func Outputs(clspec *logging.ClusterLoggingSpec, secrets map[string]*corev1.Secr
 					Desc:         "File sink for storing logs",
 					InLabel:      helpers.MakeInputs(inputs...),
 					TemplateStr:  output.FileSinkTemplate,
-				}})
+				},
+			})
 		}
 	}
+
+	outputs = generator.MergeElements(outputs, []generator.Element{
+		output.InternalMetricsSource{
+			Desc:         "Source for generating vector's internal metrics",
+			TemplateName: "inputSourceInternalMetricsTemplate",
+			TemplateStr:  output.InternalMetricsSourceTemplate,
+		},
+
+		output.PromSink{
+			Desc:         "Sink for exporting Prometheus metrics",
+			TemplateName: "outputSinkPrometheusTemplate",
+			TemplateStr:  output.PrometheusSinkTemplate,
+		},
+	})
+
 	return outputs
 }
