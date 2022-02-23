@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -121,7 +120,6 @@ func (spec *ClusterLogForwarderSpec) InputMap() map[string]*InputSpec {
 // LimitMap returns a map of limit names to LimitSpec.
 func (spec *ClusterLogForwarderSpec) LimitMap() map[string]*LimitSpec {
 	m := map[string]*LimitSpec{}
-	fmt.Println(len(spec.Limits))
 	for i := range spec.Limits {
 		m[spec.Limits[i].Name] = &spec.Limits[i]
 	}
