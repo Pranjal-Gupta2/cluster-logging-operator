@@ -13,7 +13,6 @@ import (
 func AddThrottle(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
 	el := []generator.Element{}
 	userDefinedLimits := spec.LimitMap()
-	fmt.Println(userDefinedLimits)
 
 	for _, inputSpec := range spec.Inputs {
 		if len(inputSpec.LimitRef) > 0 {
@@ -27,13 +26,14 @@ func AddThrottle(spec *logging.ClusterLogForwarderSpec, op generator.Options) []
 			}
 		}
 	}
-	fmt.Println(el)
 
 	return el
 }
 
 func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
 	el := []generator.Element{}
+	el = append(el, AddThrottle(spec, op)...)
+
 	for _, p := range spec.Pipelines {
 		vrl := SrcPassThrough
 		if p.Labels != nil && len(p.Labels) != 0 {
@@ -65,7 +65,6 @@ func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Optio
 		el = append(el, r)
 
 	}
-	el = append(el, AddThrottle(spec, op)...)
 
 	return el
 }
