@@ -12,7 +12,7 @@ const FileSinkTemplate = `
 [sinks.{{.ComponentID}}]
 type = "file"
 inputs = {{.InLabel}}
-path = "var/log/containers/stress.log"
+path = "/var/log/containers/stress.log"
 encoding.codec = "ndjson"
 {{end}}
 `

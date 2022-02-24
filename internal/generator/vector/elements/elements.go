@@ -76,6 +76,7 @@ type = "throttle"
 inputs = {{.Inputs}}
 window_secs = 1
 threshold = {{.Threshold}}
+key_field = '.kubernetes.container_name'
 {{end}}
 `
 }
