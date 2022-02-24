@@ -78,5 +78,10 @@ func main() {
 		log.Error(err, "Unable to generate log configuration")
 		os.Exit(1)
 	}
+
+	e := os.WriteFile("./sample-clo.toml", []byte(generatedConfig), 0644)
+	if e != nil {
+		panic(e)
+	}
 	fmt.Println(generatedConfig)
 }
