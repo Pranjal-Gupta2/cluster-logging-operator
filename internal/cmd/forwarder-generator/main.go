@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
-	"github.com/openshift/cluster-logging-operator/internal/pkg/generator/forwarder"
 	"io/ioutil"
 	"os"
 	"strconv"
+
+	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
+	"github.com/openshift/cluster-logging-operator/internal/pkg/generator/forwarder"
 
 	"github.com/spf13/pflag"
 
@@ -66,10 +67,15 @@ func main() {
 
 	log.Info("Finished reading yaml", "content", string(content))
 
-	generatedConfig, err := forwarder.Generate(logging.LogCollectionTypeFluentd, string(content), *includeDefaultLogStore, *debugOutput, nil)
+	generatedConfig, err := forwarder.Generate(logging.LogCollectionTypeVector, string(content), *includeDefaultLogStore, *debugOutput, nil)
 	if err != nil {
 		log.Error(err, "Unable to generate log configuration")
 		os.Exit(1)
+	}
+
+	e := os.WriteFile("./sample-clo.toml", []byte(generatedConfig), 0644)
+	if e != nil {
+		panic(e)
 	}
 	fmt.Println(generatedConfig)
 }
