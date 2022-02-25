@@ -59,6 +59,7 @@ type Throttle struct {
 	Desc        string
 	Inputs      string
 	Threshold   string
+	KeyField    string
 }
 
 func (t Throttle) Name() string {
@@ -76,7 +77,9 @@ type = "throttle"
 inputs = {{.Inputs}}
 window_secs = 1
 threshold = {{.Threshold}}
-key_field = '.kubernetes.container_name'
+{{- if .KeyField}}
+key_field = {{ .KeyField }}
+{{- end}}
 {{end}}
 `
 }

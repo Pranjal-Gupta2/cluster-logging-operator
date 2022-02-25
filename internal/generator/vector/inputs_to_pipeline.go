@@ -10,29 +10,12 @@ import (
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/helpers"
 )
 
-func AddThrottle(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
-	el := []generator.Element{}
-	userDefinedLimits := spec.LimitMap()
-
-	for _, inputSpec := range spec.Inputs {
-		if len(inputSpec.LimitRef) > 0 {
-			if limit, ok := userDefinedLimits[inputSpec.LimitRef]; ok {
-				t := Throttle{
-					ComponentID: fmt.Sprintf(`throttle_%s`, inputSpec.Name),
-					Inputs:      helpers.MakeInputs([]string{fmt.Sprintf(`application_routes.%s`, inputSpec.Name)}...),
-					Threshold:   limit.MaxBytesPerSecond.String(),
-				}
-				el = append(el, t)
-			}
-		}
-	}
-
-	return el
-}
+const (
+	perContainerLimitKeyField = `"{{ file }}"`
+)
 
 func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
 	el := []generator.Element{}
-	el = append(el, AddThrottle(spec, op)...)
 
 	for _, p := range spec.Pipelines {
 		vrl := SrcPassThrough
@@ -42,11 +25,36 @@ func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Optio
 		}
 		modifiedInputRefs := make([]string, 0)
 		userDefinedInputs := spec.InputMap()
+		userDefinedLimits := spec.LimitMap()
+
 		for _, inputRef := range p.InputRefs {
 			if !logging.ReservedInputNames.Has(inputRef) {
 				if input, ok := userDefinedInputs[inputRef]; ok {
-					if len(input.LimitRef) > 0 {
+					if len(input.ContainerLimitRef) > 0 {
 						inputRef = fmt.Sprintf(`"throttle_%s"`, inputRef)
+
+						if limit, ok := userDefinedLimits[input.ContainerLimitRef]; ok {
+							t := Throttle{
+								ComponentID: fmt.Sprintf(`throttle_%s`, input.Name),
+								Inputs:      helpers.MakeInputs([]string{fmt.Sprintf(`application_routes.%s`, input.Name)}...),
+								Threshold:   limit.MaxRecordsPerSecond.String(),
+								KeyField:    perContainerLimitKeyField,
+							}
+							el = append(el, t)
+						}
+
+					} else if len(input.GroupLimitRef) > 0 {
+						inputRef = fmt.Sprintf(`"throttle_%s"`, inputRef)
+
+						if limit, ok := userDefinedLimits[input.GroupLimitRef]; ok {
+							t := Throttle{
+								ComponentID: fmt.Sprintf(`throttle_%s`, input.Name),
+								Inputs:      helpers.MakeInputs([]string{fmt.Sprintf(`application_routes.%s`, input.Name)}...),
+								Threshold:   limit.MaxRecordsPerSecond.String(),
+							}
+							el = append(el, t)
+						}
+
 					} else {
 						inputRef = fmt.Sprintf(`"application_routes.%s"`, inputRef)
 					}
@@ -58,9 +66,8 @@ func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Optio
 
 		r := Remap{
 			ComponentID: p.Name,
-			// Inputs:      helpers.MakeInputs(p.InputRefs...),
-			Inputs: helpers.MakeInputs(modifiedInputRefs...),
-			VRL:    vrl,
+			Inputs:      helpers.MakeInputs(modifiedInputRefs...),
+			VRL:         vrl,
 		}
 		el = append(el, r)
 

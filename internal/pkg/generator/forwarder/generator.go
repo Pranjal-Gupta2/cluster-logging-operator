@@ -3,6 +3,7 @@ package forwarder
 import (
 	"errors"
 	"fmt"
+
 	forwardergenerator "github.com/openshift/cluster-logging-operator/internal/generator/forwarder"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
