@@ -73,12 +73,14 @@ codec = "json"
 {{end}}
 `,
 	}
+}
 
 type Throttle struct {
 	ComponentID string
 	Desc        string
 	Inputs      string
 	Threshold   string
+	KeyField    string
 }
 
 func (t Throttle) Name() string {
@@ -96,6 +98,9 @@ type = "throttle"
 inputs = {{.Inputs}}
 window_secs = 1
 threshold = {{.Threshold}}
+{{- if .KeyField}}
+key_field = {{ .KeyField }}
+{{- end}}
 {{end}}
 `
 }
