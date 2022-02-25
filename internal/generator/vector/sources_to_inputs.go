@@ -8,6 +8,7 @@ import (
 	"github.com/openshift/cluster-logging-operator/internal/generator"
 	. "github.com/openshift/cluster-logging-operator/internal/generator/vector/elements"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/helpers"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -17,13 +18,14 @@ const (
 )
 
 var (
-	AddLogTypeApp          = fmt.Sprintf(".log_type = %q", logging.InputNameApplication)
-	AddLogTypeInfra        = fmt.Sprintf(".log_type = %q", logging.InputNameInfrastructure)
-	AddLogTypeAudit        = fmt.Sprintf(".log_type = %q", logging.InputNameAudit)
-	InfraContainerLogsExpr = fmt.Sprintf(`'%s'`, IsInfraContainer)
-	AppContainerLogsExpr   = fmt.Sprintf(`'!(%s)'`, IsInfraContainer)
-	InputContainerLogs     = "container_logs"
-	InputJournalLogs       = "journal_logs"
+	AddLogTypeApp           = fmt.Sprintf(".log_type = %q", logging.InputNameApplication)
+	AddLogTypeInfra         = fmt.Sprintf(".log_type = %q", logging.InputNameInfrastructure)
+	AddLogTypeAudit         = fmt.Sprintf(".log_type = %q", logging.InputNameAudit)
+	InfraContainerLogsExpr  = fmt.Sprintf(`'%s'`, IsInfraContainer)
+	AppContainerLogsExpr    = fmt.Sprintf(`'!(%s)'`, IsInfraContainer)
+	InputContainerLogs      = "container_logs"
+	InputJournalLogs        = "journal_logs"
+	DefaultApplicationRoute = "other"
 )
 
 // SourcesToInputs takes the raw log sources (container, journal, audit) and produces Inputs as defined by ClusterLogForwarder Api
@@ -65,19 +67,29 @@ func SourcesToInputs(spec *logging.ClusterLogForwarderSpec, o generator.Options)
 		}
 
 		userDefined := spec.InputMap()
+		allNamespaces := sets.NewString()
 		for _, pipeline := range spec.Pipelines {
 			for _, inRef := range pipeline.InputRefs {
 				if input, ok := userDefined[inRef]; ok {
 					if input.Application != nil {
 						namespaces := make([]string, 0)
 						for _, ns := range input.Application.Namespaces {
-							namespaces = append(namespaces, fmt.Sprintf(`.kubernetes.pod_namespace == "%s"`, ns))
+							ns = fmt.Sprintf(`.kubernetes.pod_namespace == "%s"`, ns)
+
+							namespaces = append(namespaces, ns)
+							if !allNamespaces.Has(ns) {
+								allNamespaces.Insert(ns)
+							}
+
 						}
-						applicationRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, strings.Join(namespaces, " && "))
+						applicationRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, strings.Join(namespaces, " || "))
 					}
 				}
 			}
 		}
+
+		applicationRoute.Routes[DefaultApplicationRoute] = fmt.Sprintf(`'!(%s)'`, strings.Join(allNamespaces.List(), " || "))
+
 		el = append(el, applicationRoute)
 
 	}

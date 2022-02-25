@@ -4,18 +4,31 @@ import (
 	"github.com/openshift/cluster-logging-operator/internal/generator"
 )
 
-type FileSink = generator.ConfLiteral
+type File struct {
+	ComponentID string
+	Desc        string
+	Inputs      string
+	Path        string
+}
 
-const FileSinkTemplate = `
-{{define "outputSinkFileTemplate" -}}
+func (f File) Name() string {
+	return "FileTemplate"
+}
+
+func (f File) Template() string {
+	return `
+{{define "FileTemplate" -}}
+{{- if .Desc}}
 # {{.Desc}}
+{{- end}}
 [sinks.{{.ComponentID}}]
 type = "file"
-inputs = {{.InLabel}}
-path = "/var/log/containers/stress.log"
+inputs = {{.Inputs}}
+path = {{.Path}}
 encoding.codec = "ndjson"
 {{end}}
 `
+}
 
 type InternalMetricsSource = generator.ConfLiteral
 
