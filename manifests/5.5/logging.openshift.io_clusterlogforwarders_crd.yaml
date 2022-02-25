@@ -90,12 +90,15 @@ spec:
                     audit:
                       description: Audit, if present, enables `audit` logs.
                       type: object
+                    containerLimitRef:
+                      description: Flow control limit to be applied to each container selected by this input. No container selected by this input can exceed this limit.
+                      type: string
+                    groupLimitRef:
+                      description: Flow control limit to be applied to the aggregated log flow to this output. The total log flow to this output cannot exceed the limit.
+                      type: string
                     infrastructure:
                       description: Infrastructure, if present, enables `infrastructure` logs.
                       type: object
-                    limitRef:
-                      description: LimitRef refers to the limit name applied at the `input` of a `pipeline`
-                      type: string
                     name:
                       description: Name used to refer to the input of a `pipeline`.
                       type: string
@@ -107,11 +110,11 @@ spec:
                 description: Limits are all the flow control measures used to rate limit logs collected by collector in a node
                 items:
                   properties:
-                    maxBytesPerSecond:
+                    maxRecordsPerSecond:
                       anyOf:
                       - type: integer
                       - type: string
-                      description: MaxBytesPerSecond is the maximum byte rate allowed from a input or an output in a pipeline
+                      description: MaxRecordsPerSecond is the maximum number of log records allowed per input/output in a pipeline
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
                     name:

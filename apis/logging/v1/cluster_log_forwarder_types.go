@@ -97,11 +97,19 @@ type InputSpec struct {
 	// +optional
 	Audit *Audit `json:"audit,omitempty"`
 
-	// LimitRef refers to the limit name applied at the `input`
-	// of a `pipeline`
+	// Flow control limit to be applied to the aggregated log
+	// flow to this output. The total log flow to this output
+	// cannot exceed the limit.
 	//
 	// +optional
-	LimitRef string `json:"limitRef,omitempty"`
+	GroupLimitRef string `json:"groupLimitRef,omitempty"`
+
+	// Flow control limit to be applied to each container selected
+	// by this input. No container selected by this input can
+	// exceed this limit.
+	//
+	// +optional
+	ContainerLimitRef string `json:"containerLimitRef,omitempty"`
 }
 
 // Application log selector.
@@ -317,11 +325,11 @@ type LimitSpec struct {
 	// +required
 	Policy PolicyType `json:"policy,omitempty"`
 
-	// MaxBytesPerSecond is the maximum byte rate allowed from a
-	// input or an output in a pipeline
+	// MaxRecordsPerSecond is the maximum number of log records
+	// allowed per input/output in a pipeline
 	//
 	// +required
-	MaxBytesPerSecond resource.Quantity `json:"maxBytesPerSecond,omitempty"`
+	MaxRecordsPerSecond resource.Quantity `json:"maxRecordsPerSecond,omitempty"`
 }
 
 type PolicyType string
