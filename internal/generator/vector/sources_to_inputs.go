@@ -60,7 +60,7 @@ func SourcesToInputs(spec *logging.ClusterLogForwarderSpec, o generator.Options)
 		el = append(el, r)
 
 		applicationRoute := Route{
-			Desc:        `Add custom user inputs from CLF Spec`,
+			Desc:        `Add custom application inputs from CLF Spec`,
 			ComponentID: "application_routes",
 			Inputs:      helpers.MakeInputs("application"),
 			Routes:      map[string]string{},
@@ -82,15 +82,21 @@ func SourcesToInputs(spec *logging.ClusterLogForwarderSpec, o generator.Options)
 							}
 
 						}
-						applicationRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, strings.Join(namespaces, " || "))
+
+						if len(namespaces) == 0 {
+							applicationRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, SrcPassThrough)
+						} else {
+							applicationRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, strings.Join(namespaces, " || "))
+							applicationRoute.Routes[DefaultApplicationRoute] = fmt.Sprintf(`'!(%s)'`, strings.Join(allNamespaces.List(), " || "))
+						}
 					}
 				}
 			}
 		}
 
-		applicationRoute.Routes[DefaultApplicationRoute] = fmt.Sprintf(`'!(%s)'`, strings.Join(allNamespaces.List(), " || "))
-
-		el = append(el, applicationRoute)
+		if len(applicationRoute.Routes) > 0 {
+			el = append(el, applicationRoute)
+		}
 
 	}
 	if types.Has(logging.InputNameInfrastructure) {
@@ -101,6 +107,29 @@ func SourcesToInputs(spec *logging.ClusterLogForwarderSpec, o generator.Options)
 			VRL:         AddLogTypeInfra,
 		}
 		el = append(el, r)
+
+		infraRoute := Route{
+			Desc:        `Add custom infra inputs from CLF Spec`,
+			ComponentID: "infra_routes",
+			Inputs:      helpers.MakeInputs("infrastructure"),
+			Routes:      map[string]string{},
+		}
+
+		userDefined := spec.InputMap()
+		for _, pipeline := range spec.Pipelines {
+			for _, inRef := range pipeline.InputRefs {
+				if input, ok := userDefined[inRef]; ok {
+					if input.Infrastructure != nil {
+						infraRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, SrcPassThrough)
+					}
+				}
+			}
+		}
+
+		if len(infraRoute.Routes) > 0 {
+			el = append(el, infraRoute)
+		}
+
 	}
 	if types.Has(logging.InputNameAudit) {
 		r := Remap{
@@ -110,8 +139,30 @@ func SourcesToInputs(spec *logging.ClusterLogForwarderSpec, o generator.Options)
 			VRL:         AddLogTypeAudit,
 		}
 		el = append(el, r)
+
+		auditRoute := Route{
+			Desc:        `Add custom audit inputs from CLF Spec`,
+			ComponentID: "audit_routes",
+			Inputs:      helpers.MakeInputs("audit"),
+			Routes:      map[string]string{},
+		}
+
+		userDefined := spec.InputMap()
+		for _, pipeline := range spec.Pipelines {
+			for _, inRef := range pipeline.InputRefs {
+				if input, ok := userDefined[inRef]; ok {
+					if input.Audit != nil {
+						auditRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, SrcPassThrough)
+					}
+				}
+			}
+		}
+
+		if len(auditRoute.Routes) > 0 {
+			el = append(el, auditRoute)
+		}
+
 	}
-	//TODO add user defined routing
 
 	return el
 }

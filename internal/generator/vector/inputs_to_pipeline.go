@@ -14,6 +14,23 @@ const (
 	perContainerLimitKeyField = `"{{ file }}"`
 )
 
+func MakeCustomInput(input *logging.InputSpec) string {
+	if input.Application != nil {
+		return fmt.Sprintf(`"application_routes.%s"`, input.Name)
+	}
+
+	if input.Infrastructure != nil {
+		return fmt.Sprintf(`"infra_routes.%s"`, input.Name)
+
+	}
+
+	if input.Audit != nil {
+		return fmt.Sprintf(`"audit_routes.%s"`, input.Name)
+	}
+
+	return ""
+}
+
 func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
 	el := []generator.Element{}
 
@@ -31,37 +48,35 @@ func InputsToPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Optio
 			if !logging.ReservedInputNames.Has(inputRef) {
 				if input, ok := userDefinedInputs[inputRef]; ok {
 					if len(input.ContainerLimitRef) > 0 {
-						inputRef = fmt.Sprintf(`"throttle_%s"`, inputRef)
-
 						if limit, ok := userDefinedLimits[input.ContainerLimitRef]; ok {
 							t := Throttle{
 								ComponentID: fmt.Sprintf(`throttle_%s`, input.Name),
-								Inputs:      helpers.MakeInputs([]string{fmt.Sprintf(`application_routes.%s`, input.Name)}...),
+								Inputs:      helpers.MakeInputs([]string{MakeCustomInput(input)}...),
 								Threshold:   limit.MaxRecordsPerSecond.String(),
 								KeyField:    perContainerLimitKeyField,
 							}
 							el = append(el, t)
+							modifiedInputRefs = append(modifiedInputRefs, fmt.Sprintf(`throttle_%s`, inputRef))
 						}
 
 					} else if len(input.GroupLimitRef) > 0 {
-						inputRef = fmt.Sprintf(`"throttle_%s"`, inputRef)
-
 						if limit, ok := userDefinedLimits[input.GroupLimitRef]; ok {
 							t := Throttle{
 								ComponentID: fmt.Sprintf(`throttle_%s`, input.Name),
-								Inputs:      helpers.MakeInputs([]string{fmt.Sprintf(`application_routes.%s`, input.Name)}...),
+								Inputs:      helpers.MakeInputs([]string{MakeCustomInput(input)}...),
 								Threshold:   limit.MaxRecordsPerSecond.String(),
 							}
 							el = append(el, t)
+							modifiedInputRefs = append(modifiedInputRefs, fmt.Sprintf(`throttle_%s`, inputRef))
 						}
-
 					} else {
-						inputRef = fmt.Sprintf(`"application_routes.%s"`, inputRef)
+						modifiedInputRefs = append(modifiedInputRefs, MakeCustomInput(input))
 					}
 				}
+			} else {
+				modifiedInputRefs = append(modifiedInputRefs, inputRef)
 			}
 
-			modifiedInputRefs = append(modifiedInputRefs, inputRef)
 		}
 
 		r := Remap{
