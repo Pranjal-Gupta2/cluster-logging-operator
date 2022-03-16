@@ -26,6 +26,7 @@ var (
 	InputContainerLogs      = "container_logs"
 	InputJournalLogs        = "journal_logs"
 	DefaultApplicationRoute = "other"
+	DefaultRouteIsPresent   = false
 )
 
 // SourcesToInputs takes the raw log sources (container, journal, audit) and produces Inputs as defined by ClusterLogForwarder Api
@@ -88,6 +89,7 @@ func SourcesToInputs(spec *logging.ClusterLogForwarderSpec, o generator.Options)
 						} else {
 							applicationRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, strings.Join(namespaces, " || "))
 							applicationRoute.Routes[DefaultApplicationRoute] = fmt.Sprintf(`'!(%s)'`, strings.Join(allNamespaces.List(), " || "))
+							DefaultRouteIsPresent = true
 						}
 					}
 				}

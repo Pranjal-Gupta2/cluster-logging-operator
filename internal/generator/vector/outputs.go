@@ -43,13 +43,6 @@ func Outputs(clspec *logging.ClusterLoggingSpec, secrets map[string]*corev1.Secr
 	}
 
 	outputs = generator.MergeElements(outputs, []generator.Element{
-		output.File{
-			ComponentID: "other",
-			Desc:        "File sink for storing un-routed application logs",
-			Inputs:      helpers.MakeInputs(fmt.Sprintf("application_routes.%s", DefaultApplicationRoute)),
-			Path:        `"/var/log/containers/other.log"`,
-		},
-
 		output.InternalMetricsSource{
 			Desc:         "Source for generating vector's internal metrics",
 			TemplateName: "inputSourceInternalMetricsTemplate",
@@ -62,6 +55,17 @@ func Outputs(clspec *logging.ClusterLoggingSpec, secrets map[string]*corev1.Secr
 			TemplateStr:  output.PrometheusSinkTemplate,
 		},
 	})
+
+	if DefaultRouteIsPresent {
+		outputs = generator.MergeElements(outputs, []generator.Element{
+			output.File{
+				ComponentID: "other",
+				Desc:        "File sink for storing un-routed application logs",
+				Inputs:      helpers.MakeInputs(fmt.Sprintf("application_routes.%s", DefaultApplicationRoute)),
+				Path:        `"/var/log/containers/other.log"`,
+			}},
+		)
+	}
 
 	return outputs
 }
