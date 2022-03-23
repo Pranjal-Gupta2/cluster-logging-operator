@@ -22,7 +22,7 @@ var (
 
 func MakeCustomInput(input *logging.InputSpec) string {
 	if input.Application != nil {
-		return fmt.Sprintf(`"application_routes.%s"`, input.Name)
+		return fmt.Sprintf(`"route_application_logs.%s"`, input.Name)
 	}
 
 	if input.Infrastructure != nil {

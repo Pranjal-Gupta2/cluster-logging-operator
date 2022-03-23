@@ -3,7 +3,6 @@ package vector
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	"github.com/openshift/cluster-logging-operator/internal/generator"
@@ -77,37 +76,6 @@ func Inputs(spec *logging.ClusterLogForwarderSpec, o generator.Options) []genera
 			VRL:         AddLogTypeApp,
 		}
 		el = append(el, r)
-
-		applicationRoute := Route{
-			Desc:        `Add custom application inputs from CLF Spec`,
-			ComponentID: "application_routes",
-			Inputs:      helpers.MakeInputs("application"),
-			Routes:      map[string]string{},
-		}
-
-		userDefined := spec.InputMap()
-		for _, pipeline := range spec.Pipelines {
-			for _, inRef := range pipeline.InputRefs {
-				if input, ok := userDefined[inRef]; ok {
-					if input.Application != nil {
-						namespaces := make([]string, 0)
-						for _, ns := range input.Application.Namespaces {
-							namespaces = append(namespaces, fmt.Sprintf(`.kubernetes.pod_namespace == "%s"`, ns))
-						}
-
-						if len(namespaces) == 0 {
-							applicationRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, SrcPassThrough)
-						} else {
-							applicationRoute.Routes[input.Name] = fmt.Sprintf(`'%s'`, strings.Join(namespaces, " || "))
-						}
-					}
-				}
-			}
-		}
-
-		if len(applicationRoute.Routes) > 0 {
-			el = append(el, applicationRoute)
-		}
 
 	}
 	if types.Has(logging.InputNameInfrastructure) {

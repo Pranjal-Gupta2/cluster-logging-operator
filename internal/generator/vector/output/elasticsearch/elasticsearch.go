@@ -34,10 +34,12 @@ func (e Elasticsearch) Template() string {
 type = "elasticsearch"
 inputs = {{.Inputs}}
 endpoint = "{{.Endpoint}}"
-index = "{{ "{{ write-index }}" }}"
+bulk.index = "{{ "{{ write-index }}" }}"
 request.timeout_secs = 2147483648
-bulk_action = "create"
+bulk.action = "create"
 id_key = "_id"
+buffer.max_events = 10
+buffer.when_full = "drop_newest"
 {{end}}`
 }
 
