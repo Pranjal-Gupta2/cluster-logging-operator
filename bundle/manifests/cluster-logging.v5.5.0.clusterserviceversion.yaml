@@ -314,7 +314,7 @@ spec:
               containers:
               - name: cluster-logging-operator
                 image: quay.io/openshift-logging/cluster-logging-operator:latest
-                imagePullPolicy: IfNotPresent
+                imagePullPolicy: Always
                 command:
                 - cluster-logging-operator
                 env:

@@ -277,7 +277,7 @@ func (clusterRequest *ClusterLoggingRequest) reconcileCollectorServiceMonitor() 
 	endpoint := monitoringv1.Endpoint{
 		Port:   metricsPortName,
 		Path:   "/metrics",
-		Scheme: "https",
+		Scheme: "http",
 		TLSConfig: &monitoringv1.TLSConfig{
 			CAFile:     prometheusCAFile,
 			ServerName: fmt.Sprintf("%s.%s.svc", constants.CollectorName, cluster.Namespace),
