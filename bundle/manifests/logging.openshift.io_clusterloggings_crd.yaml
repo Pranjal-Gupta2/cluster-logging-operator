@@ -219,17 +219,11 @@ spec:
                             - drop_oldest_chunk
                             type: string
                           retryMaxInterval:
-                            description: 'RetryMaxInterval represents the maximum
-                              time interval for exponential backoff between retries.
-                              Takes only effect if used together with `retryType:
-                              exponential_backoff`.'
+                            description: 'RetryMaxInterval represents the maximum time interval for exponential backoff between retries. Takes only effect if used together with `retryType: exponential_backoff`.'
                             pattern: ^([0-9]+)([smhd]{0,1})$
                             type: string
                           retryTimeout:
-                            description: RetryTimeout represents the maximum time
-                              interval to attempt retries before giving up and the
-                              record is disguarded.  If unspecified, the default will
-                              be used
+                            description: RetryTimeout represents the maximum time interval to attempt retries before giving up and the record is disguarded.  If unspecified, the default will be used
                             pattern: ^([0-9]+)([smhd]{0,1})$
                             type: string
                           retryType:
@@ -248,14 +242,10 @@ spec:
                             type: string
                         type: object
                       inFile:
-                        description: "FluentdInFileSpec represents a subset of fluentd
-                          in-tail plugin parameters to tune the configuration for
-                          all fluentd in-tail inputs. \n For general parameters refer
-                          to: https://docs.fluentd.org/input/tail#parameters"
+                        description: "FluentdInFileSpec represents a subset of fluentd in-tail plugin parameters to tune the configuration for all fluentd in-tail inputs. \n For general parameters refer to: https://docs.fluentd.org/input/tail#parameters"
                         properties:
                           readLinesLimit:
-                            description: ReadLinesLimit represents the number of lines
-                              to read with each I/O operation
+                            description: ReadLinesLimit represents the number of lines to read with each I/O operation
                             type: integer
                         type: object
                     type: object

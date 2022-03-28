@@ -321,7 +321,7 @@ type LimitSpec struct {
 	// by the collector when log collection rate exceeds
 	// the specified limit
 	//
-	// +kubebuilder:validation:Enum:=drop
+	// +kubebuilder:validation:Enum:=drop;block
 	// +required
 	Policy PolicyType `json:"policy,omitempty"`
 
@@ -335,7 +335,8 @@ type LimitSpec struct {
 type PolicyType string
 
 const (
-	DropPolicy PolicyType = "drop"
+	DropPolicy  PolicyType = "drop"
+	BlockPolicy PolicyType = "block"
 )
 
 // +kubebuilder:object:root=true

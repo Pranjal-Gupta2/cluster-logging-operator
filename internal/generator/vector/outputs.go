@@ -1,9 +1,12 @@
 package vector
 
 import (
+	"strings"
+
 	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	"github.com/openshift/cluster-logging-operator/internal/generator"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/helpers"
+	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/elasticsearch"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/kafka"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/loki"
@@ -23,6 +26,7 @@ func OutputFromPipelines(spec *logging.ClusterLogForwarderSpec, op generator.Opt
 func Outputs(clspec *logging.ClusterLoggingSpec, secrets map[string]*corev1.Secret, clfspec *logging.ClusterLogForwarderSpec, op generator.Options) []generator.Element {
 	outputs := []generator.Element{}
 	ofp := OutputFromPipelines(clfspec, op)
+	limitMap := clfspec.LimitMap()
 
 	for _, o := range clfspec.Outputs {
 		secret := secrets[o.Name]
@@ -35,7 +39,28 @@ func Outputs(clspec *logging.ClusterLoggingSpec, secrets map[string]*corev1.Secr
 		case logging.OutputTypeElasticsearch:
 			outputs = generator.MergeElements(outputs, elasticsearch.Conf(o, inputs, secret, op))
 		}
+
+		if len(o.LimitRef) > 0 {
+			if limit, ok := limitMap[o.LimitRef]; ok {
+				policy := output.DropPolicy
+				switch limit.Policy {
+				case logging.DropPolicy:
+					policy = output.DropPolicy
+				case logging.BlockPolicy:
+					policy = output.BlockPolicy
+				}
+
+				outputs = append(outputs, output.Buffer{
+					SinkComponentID: strings.ToLower(helpers.Replacer.Replace(o.Name)),
+					MaxEvents:       limit.MaxRecordsPerSecond.AsDec().String(),
+					Type:            output.MemoryBuffer,
+					WhenFull:        policy,
+				})
+			}
+		}
+
 	}
+
 	outputs = append(outputs, PrometheusOutput(PrometheusOutputSinkName, []string{InternalMetricsSourceName}))
 	return outputs
 }

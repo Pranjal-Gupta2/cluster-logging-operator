@@ -117,6 +117,7 @@ spec:
                       description: Policy is used to define the action taken by the collector when log collection rate exceeds the specified limit
                       enum:
                       - drop
+                      - block
                       type: string
                   type: object
                 type: array

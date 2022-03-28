@@ -38,8 +38,6 @@ bulk.index = "{{ "{{ write-index }}" }}"
 request.timeout_secs = 2147483648
 bulk.action = "create"
 id_key = "_id"
-buffer.max_events = 10
-buffer.when_full = "drop_newest"
 {{end}}`
 }
 
