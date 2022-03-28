@@ -67,7 +67,7 @@ if err == null {
 							t := Throttle{
 								ComponentID: fmt.Sprintf(`throttle_%s`, input.Name),
 								Inputs:      helpers.MakeInputs([]string{MakeCustomInput(input)}...),
-								Threshold:   limit.MaxRecordsPerSecond.String(),
+								Threshold:   limit.MaxRecordsPerSecond.AsDec().String(),
 								KeyField:    perContainerLimitKeyField,
 							}
 							el = append(el, t)
@@ -79,7 +79,7 @@ if err == null {
 							t := Throttle{
 								ComponentID: fmt.Sprintf(`throttle_%s`, input.Name),
 								Inputs:      helpers.MakeInputs([]string{MakeCustomInput(input)}...),
-								Threshold:   limit.MaxRecordsPerSecond.String(),
+								Threshold:   limit.MaxRecordsPerSecond.AsDec().String(),
 							}
 							el = append(el, t)
 							modifiedInputRefs = append(modifiedInputRefs, fmt.Sprintf(`throttle_%s`, inputRef))
