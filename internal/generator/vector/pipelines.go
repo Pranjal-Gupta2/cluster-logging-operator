@@ -63,7 +63,7 @@ if err == null {
 			if !logging.ReservedInputNames.Has(inputRef) {
 				if input, ok := userDefined[inputRef]; ok {
 					if len(input.ContainerLimitRef) > 0 {
-						if limit, ok := userDefinedLimits[input.ContainerLimitRef]; ok {
+						if limit, ok := userDefinedLimits[input.ContainerLimitRef]; ok && limit.Policy != logging.IgnorePolicy {
 							t := Throttle{
 								ComponentID: fmt.Sprintf(`throttle_%s`, input.Name),
 								Inputs:      helpers.MakeInputs([]string{MakeCustomInput(input)}...),
@@ -75,7 +75,7 @@ if err == null {
 						}
 
 					} else if len(input.GroupLimitRef) > 0 {
-						if limit, ok := userDefinedLimits[input.GroupLimitRef]; ok {
+						if limit, ok := userDefinedLimits[input.GroupLimitRef]; ok && limit.Policy != logging.IgnorePolicy {
 							t := Throttle{
 								ComponentID: fmt.Sprintf(`throttle_%s`, input.Name),
 								Inputs:      helpers.MakeInputs([]string{MakeCustomInput(input)}...),

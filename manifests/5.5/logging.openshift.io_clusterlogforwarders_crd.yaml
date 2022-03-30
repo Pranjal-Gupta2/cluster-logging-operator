@@ -121,6 +121,7 @@ spec:
                       enum:
                       - drop
                       - block
+                      - ignore
                       type: string
                   type: object
                 type: array
