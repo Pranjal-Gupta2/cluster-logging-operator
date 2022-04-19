@@ -1,11 +1,14 @@
 package vector
 
 import (
+	"strings"
+
 	"github.com/ViaQ/logerr/log"
 	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	"github.com/openshift/cluster-logging-operator/internal/constants"
 	"github.com/openshift/cluster-logging-operator/internal/generator"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/helpers"
+	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/elasticsearch"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/kafka"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/loki"
@@ -48,7 +51,16 @@ func Outputs(clspec *logging.ClusterLoggingSpec, secrets map[string]*corev1.Secr
 		case logging.OutputTypeElasticsearch:
 			outputs = generator.MergeElements(outputs, elasticsearch.Conf(o, inputs, secret, op))
 		}
+
+		outputs = append(outputs, output.Buffer{
+			SinkComponentID: strings.ToLower(helpers.Replacer.Replace(o.Name)),
+			MaxEvents:       output.DefaultMaxEvents,
+			MaxSize:         output.DefaultMaxSize,
+			Type:            output.DefaultBufferType,
+			WhenFull:        output.DefaultOverflowAction,
+		})
 	}
+
 	outputs = append(outputs, PrometheusOutput(PrometheusOutputSinkName, []string{InternalMetricsSourceName}))
 	return outputs
 }
