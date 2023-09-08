@@ -25,11 +25,11 @@ VERSION=$(call KUSTOMIZE_VALUE,newTag)
 NAMESPACE=$(shell awk '/namespace:/{print $$2}' $(OVERLAY)/kustomization.yaml)
 
 # Get operand image names from the deployment patch in the overlay.
-DEPLOY_IMG=$(shell awk '/name:/ {NAME = $$NF} /value: / { if (NAME == "$(1)") { print $$NF; exit 0; }  }' $(OVERLAY_DIR)/deployment_patch.yaml)
+DEPLOY_ENV=$(shell awk '/name:/ {NAME = $$NF} /value: / { if (NAME == "$(1)") { print $$NF; exit 0; }  }' $(OVERLAY)/deployment_patch.yaml)
 IMAGE_LOGGING_VECTOR=$(call DEPLOY_ENV,RELATED_IMAGE_VECTOR)
 IMAGE_LOGGING_FLUENTD=$(call DEPLOY_ENV,RELATED_IMAGE_FLUENTD)
 IMAGE_LOGFILEMETRICEXPORTER=$(call DEPLOY_ENV,RELATED_IMAGE_LOG_FILE_METRIC_EXPORTER)
-IMAGE_LOGGING_CONSOLE_PLUGIN?=$(call DEPLOY_ENV,RELATED_IMAGE_LOGGING_CONSOLE_PLUGIN)
+IMAGE_LOGGING_CONSOLE_PLUGIN=$(call DEPLOY_ENV,RELATED_IMAGE_LOGGING_CONSOLE_PLUGIN)
 
 export IMAGE_TAG=$(IMAGE_NAME):$(VERSION)
 BUNDLE_TAG=$(IMAGE_NAME)-bundle:$(VERSION)
@@ -65,7 +65,7 @@ tools: $(BINGO) $(GOLANGCI_LINT) $(JUNITREPORT) $(OPERATOR_SDK) $(OPM) $(KUSTOMI
 
 .PHONY: pre-commit
 # Should pass when run before commit.
-pre-commit: clean bundle check docs
+pre-commit: clean image bundle check docs
 
 .PHONY: check
 # check health of the code:
@@ -78,7 +78,8 @@ check: compile-tests bin/forwarder-generator bin/cluster-logging-operator bin/fu
 
 # Compile all tests and code but don't run the tests.
 compile-tests: generate
-	go test ./test/... -exec true > /dev/null # Build all tests but don't run
+	go test -tags vector  ./test/... -run NONE > /dev/null
+	go test -tags fluentd  ./test/... -run NONE > /dev/null
 
 .PHONY: ci-check
 # CI calls ci-check first.
@@ -178,7 +179,7 @@ spotless: clean
 
 .PHONY: image
 image: .target/image
-.target/image: .target $(GEN_TIMESTAMP) $(shell find must-gather version bundle .bingo apis controllers internal -type f) Dockerfile  go.mod go.sum
+.target/image: .target $(GEN_TIMESTAMP) $(shell find must-gather version bundle .bingo apis controllers internal -type f 2>/dev/null) Dockerfile  go.mod go.sum
 	podman build -t $(IMAGE_TAG) . -f Dockerfile
 	touch $@
 
@@ -247,6 +248,15 @@ undeploy-elasticsearch-operator:
 deploy-example: deploy
 	oc create -n $(NAMESPACE) -f hack/cr.yaml
 
+# NOTE: you can run any tests directly using `go test` as follows:
+#   env $(make -s test-env) go test ./my/packages
+test-env: ## Echo test environment, useful for running tests outside of the Makefile.
+	echo \
+	RELATED_IMAGE_VECTOR=$(IMAGE_LOGGING_VECTOR) \
+	RELATED_IMAGE_FLUENTD=$(IMAGE_LOGGING_FLUENTD) \
+	RELATED_IMAGE_LOG_FILE_METRIC_EXPORTER=$(IMAGE_LOGFILEMETRICEXPORTER) \
+	RELATED_IMAGE_LOGGING_CONSOLE_PLUGIN=$(IMAGE_LOGGING_CONSOLE_PLUGIN) \
+
 .PHONY: test-functional
 test-functional: test-functional-fluentd test-functional-vector
 	RELATED_IMAGE_VECTOR=$(IMAGE_LOGGING_VECTOR) \
@@ -268,6 +278,7 @@ test-functional-vector: test-functional-benchmarker-vector
 	RELATED_IMAGE_VECTOR=$(IMAGE_LOGGING_VECTOR) \
 	RELATED_IMAGE_LOG_FILE_METRIC_EXPORTER=$(IMAGE_LOGFILEMETRICEXPORTER) \
 	go test --tags=vector -race \
+		./test/functional/filters/... \
 		./test/functional/outputs/elasticsearch/... \
 		./test/functional/outputs/kafka/... \
 		./test/functional/outputs/cloudwatch/... \

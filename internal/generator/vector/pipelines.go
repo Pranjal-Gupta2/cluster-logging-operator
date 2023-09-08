@@ -8,6 +8,7 @@ import (
 	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	"github.com/openshift/cluster-logging-operator/internal/generator"
 	. "github.com/openshift/cluster-logging-operator/internal/generator/vector/elements"
+	"github.com/openshift/cluster-logging-operator/internal/generator/vector/filter"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/helpers"
 )
 
@@ -62,6 +63,19 @@ if .log_type == "application" {
 `
 			vrls = append(vrls, parse)
 		}
+
+		filters := spec.FilterMap()
+		for _, filterName := range p.FilterRefs {
+			if f, ok := filters[filterName]; ok {
+				// FIXME validation first?
+				if vrl, err := filter.RemapVRL(f, spec, op); err != nil {
+					// FIXME error handling
+				} else {
+					vrls = append(vrls, vrl)
+				}
+			}
+		}
+
 		vrl := SrcPassThrough
 		if len(vrls) != 0 {
 			vrl = strings.Join(helpers.TrimSpaces(vrls), "\n\n")

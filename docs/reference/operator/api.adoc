@@ -38,11 +38,30 @@ ClusterLogForwarderSpec defines how logs should be forwarded to remote targets.
 |======================
 |Property|Type|Description
 
+|filters|array|  Filters are applied to log records passing through a pipeline.
 |inputs|array|  *(optional)* Inputs are named filters for log messages to be forwarded.
 |outputDefaults|object|  *(optional)* DEPRECATED OutputDefaults specify forwarder config explicitly for the
 |outputs|array|  *(optional)* Outputs are named destinations for log messages.
 |pipelines|array|  Pipelines forward the messages selected by a set of inputs to a set of outputs.
 |serviceAccountName|string|  *(optional)* ServiceAccountName is the serviceaccount associated with the clusterlogforwarder
+|======================
+
+=== .spec.filters[]
+===== Description
+
+Filter defines a filter for log messages.
+See [FilterTypeSpec] for a list of filter types.
+
+=====  Type
+* array
+
+[options="header"]
+|======================
+|Property|Type|Description
+
+|apiAudit|object|  *(optional)* 
+|name|string|  Name used to refer to the filter from a `pipeline`.
+|type|string|  Type of filter.
 |======================
 
 === .spec.inputs[]
@@ -298,12 +317,19 @@ PipelinesSpec link a set of inputs to a set of outputs.
 |Property|Type|Description
 
 |detectMultilineErrors|bool|  *(optional)* DetectMultilineErrors enables multiline error detection of container logs
+|filterRefs|array|  *(optional)* Filters lists the names of filters to be applied to records going through this pipeline.
 |inputRefs|array|  InputRefs lists the names (`input.name`) of inputs to this pipeline.
 |labels|object|  *(optional)* Labels applied to log records passing through this pipeline.
 |name|string|  *(optional)* Name is optional, but must be unique in the `pipelines` list if provided.
 |outputRefs|array|  OutputRefs lists the names (`output.name`) of outputs from this pipeline.
 |parse|string|  *(optional)* Parse enables parsing of log entries into structured logs
 |======================
+
+=== .spec.pipelines[].filterRefs[]
+===== Description
+
+=====  Type
+* array
 
 === .spec.pipelines[].inputRefs[]
 ===== Description
@@ -336,6 +362,7 @@ ClusterLogForwarderStatus defines the observed state of ClusterLogForwarder
 |Property|Type|Description
 
 |conditions|object|  Conditions of the log forwarder.
+|filters|Conditions|  Filters maps filter name to condition of the filter.
 |inputs|Conditions|  Inputs maps input name to condition of the input.
 |outputs|Conditions|  Outputs maps output name to condition of the output.
 |pipelines|Conditions|  Pipelines maps pipeline name to condition of the pipeline.
@@ -346,6 +373,12 @@ ClusterLogForwarderStatus defines the observed state of ClusterLogForwarder
 
 =====  Type
 * object
+
+=== .status.filters
+===== Description
+
+=====  Type
+* Conditions
 
 === .status.inputs
 ===== Description

@@ -1,9 +1,10 @@
 package v1
 
 import (
-	"github.com/openshift/cluster-logging-operator/internal/utils/sets"
 	"reflect"
 	"strings"
+
+	"github.com/openshift/cluster-logging-operator/internal/utils/sets"
 )
 
 // Reserved input names.
@@ -39,7 +40,7 @@ func IsOutputTypeName(s string) bool {
 // A 'true' Ready condition with a message means some error with pipeline but it is still valid
 func (status ClusterLogForwarderStatus) GetReadyConditionMessages() []string {
 	var messages = []string{}
-	for _, nc := range []NamedConditions{status.Pipelines, status.Inputs, status.Outputs} {
+	for _, nc := range []NamedConditions{status.Pipelines, status.Inputs, status.Outputs, status.Filters} {
 		for _, conds := range nc {
 			currCond := conds.GetCondition(ConditionReady)
 			if !conds.IsTrueFor(ConditionReady) {
@@ -55,7 +56,7 @@ func (status ClusterLogForwarderStatus) GetReadyConditionMessages() []string {
 
 // IsReady returns true if all of the subordinate conditions are ready.
 func (status ClusterLogForwarderStatus) IsReady() bool {
-	for _, nc := range []NamedConditions{status.Pipelines, status.Inputs, status.Outputs} {
+	for _, nc := range []NamedConditions{status.Pipelines, status.Inputs, status.Outputs, status.Filters} {
 		for _, conds := range nc {
 			if !conds.IsTrueFor(ConditionReady) {
 				return false
@@ -128,6 +129,15 @@ func (spec *ClusterLogForwarderSpec) InputMap() map[string]*InputSpec {
 	m := map[string]*InputSpec{}
 	for i := range spec.Inputs {
 		m[spec.Inputs[i].Name] = &spec.Inputs[i]
+	}
+	return m
+}
+
+// FilterMap returns a map of filter names to FilterSpec.
+func (spec *ClusterLogForwarderSpec) FilterMap() map[string]*FilterSpec {
+	m := map[string]*FilterSpec{}
+	for i := range spec.Filters {
+		m[spec.Filters[i].Name] = &spec.Filters[i]
 	}
 	return m
 }

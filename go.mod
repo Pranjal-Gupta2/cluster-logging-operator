@@ -30,8 +30,10 @@ require (
 )
 
 require (
+	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/openshift/api v0.0.0-20220124143425-d74727069f6f
 	golang.org/x/mod v0.9.0
+	k8s.io/apiserver v0.26.2
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 )
 
@@ -48,7 +50,6 @@ require (
 	github.com/go-openapi/jsonreference v0.20.1 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect

@@ -146,15 +146,13 @@ func AddOwnerRefToObject(object metav1.Object, ownerRef metav1.OwnerReference) {
 // GetComponentImage returns a full image pull spec for a given component
 // based on the component type
 func GetComponentImage(component string) string {
-
-	envVarName, ok := COMPONENT_IMAGES[component]
-	if !ok {
-		log.Error(errors.New("Can't get component image"), "Environment variable name mapping missing for component", "component", component)
-		return ""
+	envVarName := COMPONENT_IMAGES[component]
+	if envVarName == "" {
+		panic(fmt.Errorf("Can't get component image, environment variable name mapping missing for %v", component))
 	}
 	imageTag := os.Getenv(envVarName)
 	if imageTag == "" {
-		log.Error(errors.New("Can't get component image"), "No image tag defined for component by environment variable", "component", component, "envVarName", envVarName)
+		panic(fmt.Errorf("Can't get component image, no image tag defined for component %v by environment variable %v", component, envVarName))
 	}
 	log.V(3).Info("Setting component image for to", "component", component, "imageTag", imageTag)
 	return imageTag
