@@ -1,6 +1,7 @@
 package fluent_test
 
 import (
+	"bufio"
 	"fmt"
 	"strings"
 	"time"
@@ -47,9 +48,9 @@ var _ = Describe("[ClusterLogForwarder]", func() {
 			clf := f.ClusterLogForwarder
 			addPipeline(clf, f.Receiver.Sources["application"])
 			f.Create(c.Client)
-			r := f.Receiver.Sources["application"].TailReader()
+			r := bufio.NewReader(f.Receiver.Sources["application"].TailReader())
 			for i := 0; i < 10; {
-				l, err := r.ReadLine()
+				l, err := r.ReadString('\n')
 				ExpectOK(err)
 				Expect(l).To(ContainSubstring(`"log_type":"app`)) // Only app logs
 				if strings.Contains(l, message) {
@@ -65,8 +66,8 @@ var _ = Describe("[ClusterLogForwarder]", func() {
 			clf := f.ClusterLogForwarder
 			addPipeline(clf, f.Receiver.Sources["infrastructure"])
 			f.Create(c.Client)
-			r := f.Receiver.Sources["infrastructure"].TailReader()
-			l, err := r.ReadLine()
+			r := bufio.NewReader(f.Receiver.Sources["infrastructure"].TailReader())
+			l, err := r.ReadString('\n')
 			ExpectOK(err)
 			Expect(l).To(ContainSubstring(`"log_type":"inf`)) // Only infra logs
 		})
@@ -91,8 +92,8 @@ var _ = Describe("[ClusterLogForwarder]", func() {
 			time.Sleep(30 * time.Second)
 			for _, name := range logTypes {
 				name := name // Don't bind to range variable
-				r := f.Receiver.Sources[name].TailReader()
-				Expect(r.ReadLine()).To(SatisfyAny(Equal(""), ContainSubstring(fmt.Sprintf(`"log-type":%q`, name))))
+				r := bufio.NewReader(f.Receiver.Sources[name].TailReader())
+				Expect(r.ReadString('\n')).To(SatisfyAny(Equal(""), ContainSubstring(fmt.Sprintf(`"log-type":%q`, name))))
 			}
 		})
 	})

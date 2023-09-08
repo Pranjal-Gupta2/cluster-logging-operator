@@ -1,6 +1,7 @@
 package fluentd_test
 
 import (
+	"bufio"
 	"fmt"
 	"strconv"
 	"strings"
@@ -38,7 +39,7 @@ var _ = Describe("Receiver", func() {
 		By("sending to a forward source")
 		g.Go(func() {
 			s := r.Sources["foo"]
-			cmd := runtime.Exec(r.Pod, "fluent-cat", "-p", strconv.Itoa(s.Port), "-h", s.Host(), "test.tag")
+			cmd := runtime.Exec(r.Pod, "", "fluent-cat", "-p", strconv.Itoa(s.Port), "-h", s.Host(), "test.tag")
 			cmd.Stdin = strings.NewReader(msg)
 			out, err := cmd.CombinedOutput()
 			ExpectOK(err, "%v\n%v", cmd.Args, string(out))
@@ -48,7 +49,7 @@ var _ = Describe("Receiver", func() {
 		g.Go(func() {
 			s := r.Sources["bar"]
 			url := fmt.Sprintf("https://%v:%v/test.tag", s.Host(), s.Port)
-			cmd := runtime.Exec(r.Pod, "curl", "-kv", "--key", r.ConfigPath("bar-key.pem"), "--cert", r.ConfigPath("bar-cert.pem"), "--cacert", r.ConfigPath("bar-ca.pem"), "-d", "json="+msg, url)
+			cmd := runtime.Exec(r.Pod, "", "curl", "-kv", "--key", r.ConfigPath("bar-key.pem"), "--cert", r.ConfigPath("bar-cert.pem"), "--cacert", r.ConfigPath("bar-ca.pem"), "-d", "json="+msg, url)
 			out, err := cmd.CombinedOutput()
 			ExpectOK(err, "%v\n%v", cmd.Args, string(out))
 		})
@@ -58,9 +59,9 @@ var _ = Describe("Receiver", func() {
 			tr := s.TailReader()
 			g.Go(func() {
 				defer tr.Close()
-				line, err := tr.ReadLine()
-				ExpectOK(err)
-				Expect(strings.TrimSpace(line)).To(Equal(msg))
+				scan := bufio.NewScanner(tr)
+				Expect(scan.Scan()).To(BeTrue(), scan.Err())
+				Expect(strings.TrimSpace(scan.Text())).To(Equal(msg))
 				Expect(r.Sources["foo"].HasOutput()).To(BeTrue())
 			})
 		}

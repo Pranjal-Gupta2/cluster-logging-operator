@@ -1,18 +1,20 @@
 package functional
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	log "github.com/ViaQ/logerr/v2/log/static"
 	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	"github.com/openshift/cluster-logging-operator/internal/url"
 	"github.com/openshift/cluster-logging-operator/internal/utils"
 	"github.com/openshift/cluster-logging-operator/test"
-	"github.com/openshift/cluster-logging-operator/test/helpers/cmd"
 	"github.com/openshift/cluster-logging-operator/test/helpers/kafka"
 	"github.com/openshift/cluster-logging-operator/test/helpers/types"
+	"github.com/openshift/cluster-logging-operator/test/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -154,25 +156,20 @@ func (f *CollectorFunctionalFramework) ReadFileFrom(outputName, filePath string)
 }
 
 func (f *CollectorFunctionalFramework) ReadNApplicationLogsFrom(n uint64, outputName string) ([]string, error) {
-	lines := []string{}
-	ctx, cancel := context.WithTimeout(context.Background(), test.SuccessTimeout())
-	defer cancel()
-	reader, err := cmd.TailReaderForContainer(f.Pod, outputName, ApplicationLogFile)
+	reader, err := runtime.PodTailReader(f.Pod, outputName, ApplicationLogFile)
 	if err != nil {
-		log.V(3).Error(err, "Error creating tail reader")
 		return nil, err
 	}
-	for {
-		line, err := reader.ReadLineContext(ctx)
-		if err != nil {
-			log.V(3).Error(err, "Error readlinecontext")
-			return nil, err
-		}
-		lines = append(lines, line)
+	defer func() { _ = reader.Close() }()
+	go func() { <-time.After(test.SuccessTimeout()); _ = reader.Close() }()
+	lines := []string{}
+	scan := bufio.NewScanner(reader)
+	for scan.Scan() {
+		lines = append(lines, scan.Text())
 		n--
 		if n == 0 {
-			break
+			return lines, err
 		}
 	}
-	return lines, err
+	return nil, scan.Err()
 }

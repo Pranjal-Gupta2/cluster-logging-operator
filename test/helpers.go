@@ -102,8 +102,16 @@ func UniqueName(prefix string) string {
 func GinkgoCurrentTest() (g ginkgo.GinkgoTestDescription, ok bool) {
 	defer func() { _ = recover() }()
 	g = ginkgo.CurrentGinkgoTestDescription() // May panic if not in a ginkgo test.
-	ok = true
-	return
+	return g, g.ComponentTexts != nil
+}
+
+// Writer returns GinkgoWriter if available, os.Stderr otherwise.
+func Writer() io.Writer {
+	w := ginkgo.GinkgoWriter
+	if w == nil {
+		w = os.Stderr
+	}
+	return w
 }
 
 // UniqueNameForTest generates a unique name for a test.

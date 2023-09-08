@@ -1,4 +1,5 @@
-//go:build vector
+// Default to vector if fluentd is not requested
+//go:build !fluentd
 
 package functional
 

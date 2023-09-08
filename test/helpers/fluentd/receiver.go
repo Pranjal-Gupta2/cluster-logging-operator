@@ -3,19 +3,18 @@ package fluentd
 
 import (
 	"fmt"
+	"io"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/openshift/cluster-logging-operator/internal/constants"
 	"github.com/openshift/cluster-logging-operator/internal/runtime"
-	testruntime "github.com/openshift/cluster-logging-operator/test/runtime"
-
 	"github.com/openshift/cluster-logging-operator/internal/utils"
 	"github.com/openshift/cluster-logging-operator/test"
 	"github.com/openshift/cluster-logging-operator/test/client"
 	"github.com/openshift/cluster-logging-operator/test/helpers/certificate"
-	"github.com/openshift/cluster-logging-operator/test/helpers/cmd"
+	testruntime "github.com/openshift/cluster-logging-operator/test/runtime"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -68,8 +67,8 @@ func (s *Source) OutFile() string { return filepath.Join(dataDir, s.Name) }
 //
 // It waits for the file to exist, and will tail the output file forever,
 // so it won't normally return io.EOF.
-func (s *Source) TailReader() *cmd.Reader {
-	r, err := cmd.TailReader(s.receiver.Pod, s.OutFile())
+func (s *Source) TailReader() io.ReadCloser {
+	r, err := testruntime.PodTailReader(s.receiver.Pod, "", s.OutFile())
 	test.Must(err)
 	return r
 }
@@ -77,7 +76,7 @@ func (s *Source) TailReader() *cmd.Reader {
 // HasOutput returns true if the source's output file exists and is non empty.
 func (s *Source) HasOutput() (bool, error) {
 	script := fmt.Sprintf("if test -s %q; then echo yes; fi", s.OutFile())
-	out, err := testruntime.Exec(s.receiver.Pod, "sh", "-c", script).Output()
+	out, err := testruntime.Exec(s.receiver.Pod, "", "sh", "-c", script).Output()
 	if err != nil {
 		return false, utils.WrapError(err)
 	}

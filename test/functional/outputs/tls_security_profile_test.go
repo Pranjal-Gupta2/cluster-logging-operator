@@ -1,13 +1,14 @@
-//go:build vector
+//go:build !fluentd
 
 package outputs
 
 import (
+	"net"
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	"strings"
-
 	openshiftv1 "github.com/openshift/api/config/v1"
 	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	"github.com/openshift/cluster-logging-operator/internal/constants"
@@ -16,7 +17,6 @@ import (
 	testfw "github.com/openshift/cluster-logging-operator/test/functional"
 	"github.com/openshift/cluster-logging-operator/test/helpers/certificate"
 	corev1 "k8s.io/api/core/v1"
-	"net"
 )
 
 var _ = Describe("[functional][outputs][tlssecurityprofile] Functional tests ", func() {

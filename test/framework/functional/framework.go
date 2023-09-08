@@ -155,9 +155,9 @@ func (f *CollectorFunctionalFramework) GetMaxReadDuration() time.Duration {
 
 func (f *CollectorFunctionalFramework) RunCommand(container string, cmd ...string) (string, error) {
 	log.V(2).Info("Running", "container", container, "cmd", cmd)
-	out, err := testruntime.ExecOc(f.Pod, strings.ToLower(container), cmd[0], cmd[1:]...)
+	out, err := testruntime.Exec(f.Pod, strings.ToLower(container), cmd[0], cmd[1:]...).CombinedOutput()
 	log.V(2).Info("Exec'd", "out", out, "err", err)
-	return out, err
+	return string(out), err
 }
 
 func (f *CollectorFunctionalFramework) AddOutputContainersVisitors() []runtime.PodBuilderVisitor {

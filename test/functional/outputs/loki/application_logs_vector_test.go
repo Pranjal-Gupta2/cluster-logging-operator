@@ -1,16 +1,16 @@
-//go:build vector
+//go:build !fluentd
 
 package loki
 
 import (
 	"fmt"
-	"github.com/openshift/cluster-logging-operator/test/framework/functional"
 	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
+	"github.com/openshift/cluster-logging-operator/test/framework/functional"
 	"github.com/openshift/cluster-logging-operator/test/helpers/loki"
 )
 

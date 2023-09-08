@@ -3,18 +3,20 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
-	testrt "github.com/openshift/cluster-logging-operator/internal/runtime"
-
 	log "github.com/ViaQ/logerr/v2/log/static"
+	testrt "github.com/openshift/cluster-logging-operator/internal/runtime"
 	"github.com/openshift/cluster-logging-operator/test"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -253,6 +255,30 @@ func (c *Client) Host() string { return c.cfg.Host }
 // ControllerRuntimeClient returns the underlying controller runtime Client
 func (c *Client) ControllerRuntimeClient() crclient.Client { return c.c }
 
+// PodLogStream returns the log stream for a Pod.
+func (c *Client) PodLogStream(namespace, name string) (io.ReadCloser, error) {
+	clientset, err := kubernetes.NewForConfig(c.cfg) // Need to use the go-client for logs
+	if err == nil {
+		return clientset.CoreV1().Pods(namespace).GetLogs(name, &corev1.PodLogOptions{}).Stream(c.ctx)
+	}
+	return nil, err
+}
+
+// Logs returns the pod logs, or an error string if there is a problem reading them.
+func (c *Client) GetPodLogs(namespace, name string) string {
+	r, err := c.PodLogStream(namespace, name)
+	if err != nil {
+		return err.Error()
+	}
+	defer r.Close()
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return err.Error()
+	}
+	return string(b)
+}
+
+// Singleton
 var singleton struct {
 	c    *Client
 	err  error

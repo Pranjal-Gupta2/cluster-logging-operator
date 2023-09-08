@@ -3,12 +3,14 @@ package functional
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"path/filepath"
 	"strings"
 	"time"
 
 	log "github.com/ViaQ/logerr/v2/log/static"
 	"github.com/openshift/cluster-logging-operator/internal/constants"
+	"github.com/openshift/cluster-logging-operator/test/runtime"
 )
 
 func (f *CollectorFunctionalFramework) WriteMessagesToNamespace(msg, namespace string, numOfLogs int) error {
@@ -157,5 +159,21 @@ func (f *CollectorFunctionalFramework) WriteMessagesWithNotUTF8SymbolsToLog() er
 	log.V(3).Info("Writing messages to log with command", "cmd", cmd)
 	result, err := f.RunCommand(constants.CollectorName, "bash", "-c", cmd)
 	log.V(3).Info("WriteMessagesWithNotUTF8SymbolsToLog", "namespace", f.Pod.Namespace, "result", result, "err", err)
+	return err
+}
+
+// LogWriter returns an io.WriteCloser that appends to a log file on the collector Pod.
+// Call Close() when finished to terminate the writer process.
+func (f *CollectorFunctionalFramework) LogWriter(filename string) (io.WriteCloser, error) {
+	return runtime.PodWriter(f.Pod, constants.CollectorName, filename)
+}
+
+// WriteLog writes bytes to a log file on the collector Pod.
+func (f *CollectorFunctionalFramework) WriteLog(filename string, data []byte) error {
+	w, err := f.LogWriter(filename)
+	if err == nil {
+		defer w.Close()
+		_, err = w.Write(data)
+	}
 	return err
 }

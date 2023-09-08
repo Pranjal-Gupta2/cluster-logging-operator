@@ -1,6 +1,7 @@
 package fluent_test
 
 import (
+	"bufio"
 	"fmt"
 	"strings"
 
@@ -120,10 +121,10 @@ var _ = Describe("[ClusterLogForwarder]", func() {
 		// Verify log lines at readers.
 		g := test.FailGroup{}
 		for _, s := range f.Receiver.Sources {
-			r := s.TailReader()
+			r := bufio.NewReader(s.TailReader())
 			g.Go(func() {
 				for i := 0; i < 10; {
-					l, err := r.ReadLine()
+					l, err := r.ReadString('\n')
 					ExpectOK(err)
 					Expect(l).To(ContainSubstring(`"log_type":"app`)) // Only app logs
 					if strings.Contains(l, secureMessage) {
@@ -189,9 +190,9 @@ var _ = Describe("[ClusterLogForwarder]", func() {
 		}
 		f.Create(c.Client)
 		By("verify log lines received")
-		r := s.TailReader()
+		r := bufio.NewReader(s.TailReader())
 		for i := 0; i < 10; {
-			l, err := r.ReadLine()
+			l, err := r.ReadString('\n')
 			ExpectOK(err)
 			Expect(l).To(ContainSubstring(`"log_type":"app`)) // Only app logs
 			if strings.Contains(l, secureMessage) {
